@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String            @unique
+  username        String            @unique
+  password        String
+  language        String?
+  permissions     Permission[]
+  instances       InstanceUser[]
+  ImageServerUser ImageServerUser[]
+  NodeUser        NodeUser[]
+}
+
+model Permission {
+  id         String @id @default(cuid())
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  permission String
+}
+
+model ImageServerUser {
+  id            String                  @id @default(cuid())
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  imageServer   ImageServer             @relation(fields: [imageServerId], references: [id], onDelete: Cascade)
+  imageServerId String
+  permissions   ImageServerPermission[]
+}
+
+model ImageServerPermission {
+  id         String          @id @default(cuid())
+  user       ImageServerUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  permission String
+}
+
+model ImageServer {
+  id       String            @id @default(cuid())
+  name     String            @unique
+  url      String
+  protocol String            @default("simplestreams")
+  users    ImageServerUser[]
+}
+
+model NodePermission {
+  id         String   @id @default(cuid())
+  user       NodeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  permission String
+}
+
+model NodeUser {
+  id          String           @id @default(cuid())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  node        Node             @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  nodeId      String
+  permissions NodePermission[]
+}
+
+model Node {
+  id          String     @id @default(cuid())
+  name        String
+  address     String
+  port        String
+  lxdPort     String
+  sftpPort    String
+  certificate String
+  key         String
+  encIV       String
+  instances   Instance[]
+  users       NodeUser[]
+}
+
+model Instance {
+  id     String         @id @default(cuid())
+  name   String
+  node   Node           @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  nodeId String
+  users  InstanceUser[]
+}
+
+model InstanceUser {
+  id          String                   @id @default(cuid())
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  instance    Instance                 @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  instanceId  String
+  permissions InstanceUserPermission[]
+}
+
+model InstanceUserPermission {
+  id             String       @id @default(cuid())
+  instanceUser   InstanceUser @relation(fields: [instanceUserId], references: [id], onDelete: Cascade)
+  instanceUserId String
+  permission     String
+}
